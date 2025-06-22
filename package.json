@@ -1,0 +1,60 @@
+{
+  "name": "@davidplatt/phoenix-sdk",
+  "version": "1.0.0",
+  "description": "TypeScript SDK for Phoenix API with automatic retry logic and comprehensive type support",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "example": "tsx example.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint src --ext .ts",
+    "format": "prettier --write src",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "keywords": [
+    "phoenix",
+    "api",
+    "typescript",
+    "sdk",
+    "printing",
+    "imposition",
+    "prepress",
+    "automation",
+    "pdf",
+    "jdf"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/davidplatt/phoenix-sdk.git"
+  },
+  "bugs": {
+    "url": "https://github.com/davidplatt/phoenix-sdk/issues"
+  },
+  "homepage": "https://github.com/davidplatt/phoenix-sdk#readme",
+  "author": "David Platt",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
+    "@vitest/coverage-v8": "^3.2.4",
+    "eslint": "^8.57.1",
+    "prettier": "^3.0.0",
+    "tsup": "^8.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.34.1",
+    "vitest": "^3.2.4"
+  },
+  "dependencies": {
+    "axios": "^1.10.0"
+  }
+}

@@ -1,0 +1,29 @@
+# Source files
+src/
+tsconfig.json
+tsup.config.ts
+
+# Development files
+example.ts
+openapi-3.json
+
+# IDE and OS files
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Testing
+coverage/
+.nyc_output/
+
+# Build tools
+.eslintrc.json
+.prettierrc
+
+# Git
+.git/
+.gitignore
