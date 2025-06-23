@@ -1,5 +1,7 @@
 # Phoenix API TypeScript SDK
 
+> ⚠️ This is an unofficial SDK built and maintained independently. It is not affiliated with or endorsed by Esko or Tilia Labs.
+
 A TypeScript SDK for interacting with the Phoenix API, featuring automatic retry logic for handling concurrency limits and robust error handling.
 
 ## Installation
@@ -8,31 +10,29 @@ A TypeScript SDK for interacting with the Phoenix API, featuring automatic retry
 npm install @davidplatt/phoenix-sdk
 ```
 
+> Official Phoenix API (v23.11) Reference: [https://docs.tilialabs.com/phoenix/automation/restAPI/api/](https://docs.tilialabs.com/phoenix/automation/restAPI/api/)
+
 ## Quick Start
 
 ```typescript
-import { createPhoenixAPI } from 'phoenix-sdk'
+import { PhoenixClient } from '@davidplatt/phoenix-sdk'
+import { createPhoenixAPI } from '@davidplatt/phoenix-sdk'
 
+// Initialize the default Phoenix API interface
 const api = createPhoenixAPI()
 
-// Create a connection to a remote Phoenix
-const remoteApi = createPhoenixAPI({
-  baseURL: 'myPhoenixServerAddress', // Phoenix runs on local server
-  port: 8022,
-  timeout: 30000,
-})
-
-// Typical Phoenix workflow: Create Project → Add Product → Run Plan → Export
+// Example of typical Phoenix workflow:
+// Create Project → Add Product → Run Plan → Export
 
 // 1. Create a project
-const project = await api.createProject({ name: 'My Project' })
-const projectId = project.id
+const projectId = 'MyProject'
+const project = await api.createProject({ id: projectId })
 
 // 2. Add a product to the project
-const product = await api.createFlatProduct(projectId, {
-  name: 'My Product',
-  width: 8.5,
-  height: 11,
+const product = await api.createProduct(projectId, {
+  name: 'Postcard',
+  width: '7 in',
+  height: '5 in',
   // ... other product properties
 })
 
@@ -42,7 +42,7 @@ await api.runPlan(projectId, {
   'apply-result': true,
 })
 
-// 4. Export the imposed job
+// 4. Export the imposed job, optionally specifying a timeout
 const pdfExport = await api.exportPdf(
   projectId,
   {
@@ -50,18 +50,13 @@ const pdfExport = await api.exportPdf(
   },
   { timeoutMinutes: 5 }
 )
-
-// Manage library resources
-const stocks = await api.getStocksV2()
-const scripts = await api.getScripts()
-const templates = await api.getTemplates()
 ```
 
 ## Features
 
 - 🔄 **Automatic Retry Logic**: Handles 503 errors with exponential backoff
 - 📝 **Full TypeScript Support**: Complete type definitions for all endpoints
-- 🛡️ **Robust Error Handling**: Built-in error handling for Phoenix API quirks
+- 🛡️ **Robust Error Handling**: Clean, actionable error messages with specific error types
 - 🎯 **Complete API Coverage**: All Phoenix API endpoints implemented
 - 🏗️ **Production Ready**: Comprehensive job, layout, and product management
 - 🤖 **AI Integration**: Full support for Imposition AI, optimization, and planning
@@ -69,6 +64,10 @@ const templates = await api.getTemplates()
 - 📚 **Library Management**: Complete CRUD operations for all library resources
 - 📦 **Tree Shakeable**: Only import what you need
 - 🎨 **Clean API**: Intuitive, consistent interface across all methods
+
+## Why This Exists
+
+The Phoenix API is powerful but low-level. After building several custom integrations, I created this SDK to simplify working with Phoenix across projects. By open-sourcing it, I hope to help other developers and teams build more quickly and reliably.
 
 ## API Reference
 
@@ -89,6 +88,120 @@ interface PhoenixClientConfig {
 interface RetryConfig {
   maxRetries?: number
   timeoutMinutes?: number
+}
+```
+
+## Error Handling
+
+The SDK provides clean, actionable error messages instead of raw HTTP responses:
+
+```typescript
+import {
+  createPhoenixAPI,
+  isProjectExistsError,
+  isValidationError,
+  PhoenixError,
+} from '@davidplatt/phoenix-sdk'
+
+const api = createPhoenixAPI()
+
+try {
+  const project = await api.createProject({ id: 'MyProject' })
+} catch (error) {
+  if (isProjectExistsError(error)) {
+    console.log(`Project already exists: ${error.message}`)
+    // Handle gracefully - maybe open existing project instead
+    const existing = await api.openProject('MyProject')
+  } else if (isValidationError(error)) {
+    console.log('Invalid data:', error.message)
+    console.log('Details:', error.details)
+  } else if (error instanceof PhoenixError) {
+    console.log(`API Error (${error.code}):`, error.message)
+  }
+}
+```
+
+### Error Types
+
+- **ProjectExistsError**: Project with the same ID already exists
+- **ResourceNotFoundError**: Requested resource doesn't exist
+- **ValidationError**: Request data is invalid
+- **ServiceUnavailableError**: Phoenix server is temporarily unavailable
+- **TimeoutError**: Request exceeded the specified timeout
+- **AuthenticationError**: Authentication credentials are invalid
+- **AuthorizationError**: Insufficient permissions
+- **RateLimitError**: Too many requests sent
+
+### Error Properties
+
+```typescript
+interface PhoenixError {
+  message: string // Human-readable error message
+  code: string // Error code (e.g., 'PROJECT_EXISTS')
+  statusCode?: number // HTTP status code
+  details?: unknown // Additional error details from API
+}
+```
+
+## Error Handling Examples
+
+### Basic Error Handling
+
+```typescript
+try {
+  const project = await api.createProject({ id: 'MyProject' })
+} catch (error) {
+  if (isProjectExistsError(error)) {
+    // Project already exists - handle gracefully
+    console.log('Project exists, opening instead...')
+    const existing = await api.openProject('MyProject')
+  } else {
+    console.error('Failed to create project:', error.message)
+  }
+}
+```
+
+### Robust Project Creation
+
+```typescript
+async function createProjectAndDeleteIfExists(projectId: string) {
+  try {
+    const result = await api.createProject({ id: projectId })
+    return { success: true, project: result.data, created: true }
+  } catch (error) {
+    if (isProjectExistsError(error)) {
+      try {
+        await api.deleteJob(projectId)
+        await api.createProject({ id: projectId })
+        return { success: true, project: existing.data, created: true }
+      } catch (openError) {
+        return {
+          success: false,
+          error: 'Project exists but cannot be recreated',
+        }
+      }
+    }
+
+    return {
+      success: false,
+      error: error instanceof PhoenixError ? error.message : String(error),
+    }
+  }
+}
+```
+
+### Handling Service Unavailable
+
+````typescript
+try {
+  const result = await api.runPlan(projectId, planConfig, { timeoutMinutes: 15 })
+} catch (error) {
+  if (isServiceUnavailableError(error)) {
+    console.log(`Service busy, retry after ${error.retryAfter} seconds`)
+    // The SDK automatically handles retries, but you can implement custom logic
+  } else if (isTimeoutError(error)) {
+    console.log('Plan took too long, consider increasing timeout')
+  }
 }
 ```
 
@@ -170,21 +283,21 @@ interface RetryConfig {
 
 **Impose Tool:**
 
-- `runImpose(projectId, request, layoutIndex, retryConfig?)` - Run imposition
+- `runImpose(projectId, request, layoutIndex, retryConfig?)` - Run impose
 - `getImposeResults(projectId, layoutIndex, retryConfig?)` - Get results
 - `getImposeResult(projectId, layoutIndex, resultId, retryConfig?)` - Get specific result
 - `applyImposeResult(projectId, layoutIndex, resultId, retryConfig?)` - Apply result
 
 **Optimize Tool:**
 
-- `runOptimize(projectId, request, layoutIndex, retryConfig?)` - Run optimization
+- `runOptimize(projectId, request, layoutIndex, retryConfig?)` - Run optimize
 - `getOptimizeResults(projectId, layoutIndex, retryConfig?)` - Get results
 - `getOptimizeResult(projectId, layoutIndex, resultId, retryConfig?)` - Get specific result
 - `applyOptimizeResult(projectId, layoutIndex, resultId, retryConfig?)` - Apply result
 
 **Populate Tool:**
 
-- `runPopulate(projectId, request, layoutIndex, retryConfig?)` - Run population
+- `runPopulate(projectId, request, layoutIndex, retryConfig?)` - Run populate
 - `getPopulateResults(projectId, layoutIndex, retryConfig?)` - Get results
 - `getPopulateResult(projectId, layoutIndex, resultId, retryConfig?)` - Get specific result
 - `applyPopulateResult(projectId, layoutIndex, resultId, retryConfig?)` - Apply result
@@ -383,3 +496,10 @@ interface RetryConfig {
 ## License
 
 MIT
+
+## Contributing
+
+Issues and PRs are welcome! Please open a GitHub issue first if you’re planning a large feature or change.
+
+This project is intentionally lightweight and focused on API communication and consistency, not workflow logic.
+````

@@ -1,7 +1,8 @@
 {
   "include": [
     "src/**/*",
-    "example.ts"
+    "example.ts",
+    "tsup.config.ts",
   ],
   "compilerOptions": {
     "strict": true,

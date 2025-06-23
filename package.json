@@ -1,7 +1,7 @@
 {
   "name": "@davidplatt/phoenix-sdk",
-  "version": "1.0.0",
-  "description": "TypeScript SDK for Phoenix API with automatic retry logic and comprehensive type support",
+  "version": "1.1.0",
+  "description": "Unofficial TypeScript SDK for Phoenix API with automatic retry logic and comprehensive type support. Not affiliated with Esko or Tilia Labs.",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
