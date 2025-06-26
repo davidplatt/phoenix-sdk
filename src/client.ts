@@ -34,7 +34,12 @@ export class PhoenixClient {
    */
   constructor(config: PhoenixClientConfig = {}) {
     const port = config.port || 8022
-    const url = config.baseURL || `http://localhost`
+    let url = config.baseURL || `http://localhost`
+
+    // Ensure protocol is included
+    if (url && !url.startsWith('http://') && !url.startsWith('https://')) {
+      url = `http://${url}`
+    }
     this.client = axios.create({
       baseURL: `${url}:${port}/phoenix`,
       maxBodyLength: Infinity,
