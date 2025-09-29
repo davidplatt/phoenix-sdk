@@ -216,7 +216,7 @@ export class PhoenixAPI {
   ): Promise<AxiosResponse<components['schemas']['ResponseEntity']>> {
     return this.client.request(
       'POST',
-      `/jobs/${projectId}/export/die/Cff2`,
+      `/jobs/${projectId}/export/die/cff2`,
       request,
       retryConfig
     )
